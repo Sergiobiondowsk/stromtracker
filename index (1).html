@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StromTracker Pro – Gebäudeverwaltung</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{--bg0:#06070a;--bg:#0b0d12;--s1:#11141b;--s2:#181c26;--s3:#1f2430;--bd:#262c3a;--bd2:#323a4d;--tx:#e2e5ed;--tx2:#8a90a4;--tx3:#525870;--ac:#e8b931;--ac2:#f5cc4d;--acd:rgba(232,185,49,.12);--gn:#2dd4a0;--gnd:rgba(45,212,160,.12);--rd:#ef6060;--rdd:rgba(239,96,96,.12);--bl:#5b9ef0;--bld:rgba(91,158,240,.12);--pu:#9b7ef0;--pud:rgba(155,126,240,.12);--or:#f0923c;--cy:#22d3ee;--side:260px;--head:58px;--r:12px;--rs:8px}
+*{margin:0;padding:0;box-sizing:border-box}
+html{font-size:14px}
+body{font-family:'Instrument Sans',-apple-system,sans-serif;background:var(--bg0);color:var(--tx);min-height:100vh;overflow-x:hidden}
+
+.sidebar{position:fixed;left:0;top:0;bottom:0;width:var(--side);background:var(--bg);border-right:1px solid var(--bd);display:flex;flex-direction:column;z-index:200;transition:transform .3s}
+.sb-brand{padding:18px 20px;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:12px}
+.sb-logo{width:36px;height:36px;background:var(--ac);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:800;color:var(--bg0);flex-shrink:0}
+.sb-title{font-size:15px;font-weight:700;letter-spacing:-.3px;line-height:1.2}
+.sb-sub{font-size:10px;color:var(--tx3);font-weight:500}
+.sb-nav{flex:1;padding:10px;overflow-y:auto}
+.sb-sec{font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:var(--tx3);padding:14px 12px 6px;font-weight:700}
+.sb-item{display:flex;align-items:center;gap:11px;padding:9px 13px;border-radius:var(--rs);cursor:pointer;font-size:13px;font-weight:500;color:var(--tx2);transition:all .15s;border:1px solid transparent;margin-bottom:1px}
+.sb-item:hover{background:var(--s1);color:var(--tx)}
+.sb-item.on{background:var(--acd);color:var(--ac);border-color:rgba(232,185,49,.15)}
+.sb-item .ic{font-size:15px;width:20px;text-align:center;flex-shrink:0}
+.sb-item .bg{margin-left:auto;font-size:9px;background:var(--s3);color:var(--tx3);padding:2px 7px;border-radius:10px;font-family:'JetBrains Mono',monospace;font-weight:600}
+.sb-foot{padding:14px;border-top:1px solid var(--bd);font-size:10px;color:var(--tx3);display:flex;align-items:center;gap:7px}
+.sd{width:6px;height:6px;background:var(--gn);border-radius:50%;box-shadow:0 0 6px var(--gn)}
+
+.top{position:fixed;top:0;left:var(--side);right:0;height:var(--head);background:rgba(11,13,18,.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;padding:0 24px;z-index:150}
+.top-t{font-size:15px;font-weight:600}
+.top-r{display:flex;align-items:center;gap:14px}
+.clk{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--tx3);background:var(--s1);padding:5px 11px;border-radius:6px;border:1px solid var(--bd)}
+.mob-tog{display:none;background:var(--s1);border:1px solid var(--bd);color:var(--tx);padding:7px 11px;border-radius:var(--rs);cursor:pointer;font-size:16px}
+
+.main{margin-left:var(--side);padding-top:var(--head);min-height:100vh}
+.mc{padding:24px;max-width:1340px}
+.ph{margin-bottom:24px}
+.ph h2{font-size:21px;font-weight:700;letter-spacing:-.4px;margin-bottom:3px}
+.ph p{color:var(--tx3);font-size:13px}
+
+.card{background:var(--s1);border:1px solid var(--bd);border-radius:var(--r);margin-bottom:18px;overflow:hidden}
+.ch{padding:16px 20px;border-bottom:1px solid var(--bd);display:flex;justify-content:space-between;align-items:center}
+.ch h3{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:var(--tx2)}
+.cb{padding:20px}
+.cb.np{padding:0}
+
+.sr{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:22px}
+.sc{background:var(--s1);border:1px solid var(--bd);border-radius:var(--r);padding:18px 20px;position:relative;overflow:hidden;transition:border-color .2s}
+.sc:hover{border-color:var(--bd2)}
+.sc::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.sc.cy::before{background:linear-gradient(90deg,var(--ac),transparent)}
+.sc.cg::before{background:linear-gradient(90deg,var(--gn),transparent)}
+.sc.cb_::before{background:linear-gradient(90deg,var(--bl),transparent)}
+.sc.cr::before{background:linear-gradient(90deg,var(--rd),transparent)}
+.sc.cp::before{background:linear-gradient(90deg,var(--pu),transparent)}
+.si{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;margin-bottom:12px}
+.sc.cy .si{background:var(--acd)}.sc.cg .si{background:var(--gnd)}.sc.cb_ .si{background:var(--bld)}.sc.cr .si{background:var(--rdd)}.sc.cp .si{background:var(--pud)}
+.sl{font-size:10px;color:var(--tx3);text-transform:uppercase;letter-spacing:.8px;font-weight:600;margin-bottom:5px}
+.sv{font-size:24px;font-weight:700;letter-spacing:-.8px;font-family:'JetBrains Mono',monospace;line-height:1.1}
+.su{font-size:12px;color:var(--tx3);font-weight:400}
+.sf{margin-top:8px;display:flex;align-items:center;gap:6px;font-size:11px}
+.bu{background:var(--rdd);color:var(--rd);padding:2px 7px;border-radius:5px;font-weight:600;font-size:10px}
+.bd_{background:var(--gnd);color:var(--gn);padding:2px 7px;border-radius:5px;font-weight:600;font-size:10px}
+.bn{background:var(--s3);color:var(--tx3);padding:2px 7px;border-radius:5px;font-weight:600;font-size:10px}
+
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.g3{display:grid;grid-template-columns:2fr 1fr;gap:18px}
+.cw{position:relative;height:260px}
+.cws{position:relative;height:200px}
+
+table{width:100%;border-collapse:collapse}
+th{text-align:left;padding:10px 16px;font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--tx3);font-weight:600;background:var(--s2);border-bottom:1px solid var(--bd);white-space:nowrap}
+td{padding:11px 16px;border-bottom:1px solid var(--bd);font-size:13px;white-space:nowrap}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,.015)}
+.mn{font-family:'JetBrains Mono',monospace;font-weight:500}
+
+.tb{display:inline-flex;align-items:center;gap:6px;font-weight:600;font-size:13px}
+.td{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+
+.fr{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:16px}
+.fg{display:flex;flex-direction:column;gap:4px}
+.fg label{font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--tx3);font-weight:600}
+input,select,textarea{background:var(--bg);border:1px solid var(--bd);border-radius:var(--rs);padding:8px 12px;color:var(--tx);font-family:'JetBrains Mono',monospace;font-size:13px;outline:none;transition:border-color .2s,box-shadow .2s}
+input:focus,select:focus,textarea:focus{border-color:var(--ac);box-shadow:0 0 0 3px var(--acd)}
+select option{background:var(--s1)}
+textarea{font-family:'Instrument Sans',sans-serif;resize:vertical;min-height:60px}
+
+.btn{padding:8px 18px;border:none;border-radius:var(--rs);font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.ba{background:var(--ac);color:var(--bg0)}.ba:hover{background:var(--ac2);transform:translateY(-1px);box-shadow:0 4px 16px var(--acd)}
+.bg_{background:var(--s2);color:var(--tx2);border:1px solid var(--bd)}.bg_:hover{border-color:var(--bd2);color:var(--tx)}
+.br{background:var(--rdd);color:var(--rd)}.br:hover{background:var(--rd);color:#fff}
+.bsm{padding:5px 12px;font-size:11px}
+.bgrp{display:flex;gap:7px;flex-wrap:wrap}
+
+.pr{margin-bottom:16px}.pr:last-child{margin-bottom:0}
+.prh{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.prl{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:600}
+.prs{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--tx3)}
+.prt{height:7px;background:var(--s3);border-radius:4px;overflow:hidden}
+.prf{height:100%;border-radius:4px;transition:width .6s ease}
+
+.ri{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--bd)}
+.ri:last-child{border-bottom:none}
+.rn{font-family:'JetBrains Mono',monospace;font-size:17px;font-weight:700;color:var(--tx3);width:28px;text-align:center}
+.rn.t1{color:var(--ac)}
+.rinfo{flex:1}.rinfo .nm{font-weight:600;font-size:13px;margin-bottom:1px}.rinfo .dt{font-size:11px;color:var(--tx3)}
+.rv{font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:600;text-align:right}
+.rv .ut{font-size:10px;color:var(--tx3);font-weight:400}
+
+.kpi{display:flex;gap:22px;flex-wrap:wrap;padding:14px 20px;background:var(--s2)}
+.ki{display:flex;flex-direction:column;gap:2px}
+.ki .kl{font-size:9px;text-transform:uppercase;letter-spacing:.5px;color:var(--tx3);font-weight:600}
+.ki .kv{font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:600}
+
+.stg-row{display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-bottom:1px solid var(--bd)}
+.stg-row:last-child{border-bottom:none}
+.stg-info h4{font-size:13px;font-weight:600;margin-bottom:2px}
+.stg-info p{font-size:11px;color:var(--tx3)}
+
+.page{display:none}.page.on{display:block}
+.so{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:190}.so.open{display:block}
+
+/* Alert badges */
+.alert-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:5px;font-size:11px;font-weight:600}
+.alert-warn{background:rgba(240,146,60,.12);color:var(--or)}
+.alert-ok{background:var(--gnd);color:var(--gn)}
+.alert-miss{background:var(--rdd);color:var(--rd)}
+
+/* Meter reading card */
+.mr-card{background:var(--s2);border:1px solid var(--bd);border-radius:var(--rs);padding:16px;margin-bottom:10px;display:grid;grid-template-columns:1fr auto auto auto;gap:14px;align-items:center}
+.mr-card .mr-info{display:flex;flex-direction:column;gap:2px}
+.mr-card .mr-name{font-weight:600;font-size:13px;display:flex;align-items:center;gap:7px}
+.mr-card .mr-detail{font-size:11px;color:var(--tx3)}
+.mr-card .mr-prev{text-align:right}
+.mr-card .mr-prev .lbl{font-size:10px;color:var(--tx3);text-transform:uppercase;letter-spacing:.5px}
+.mr-card .mr-prev .val{font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:600}
+.mr-card .mr-input input{width:130px}
+.mr-card .mr-result{text-align:right;min-width:80px}
+.mr-card .mr-result .lbl{font-size:10px;color:var(--tx3);text-transform:uppercase;letter-spacing:.5px}
+.mr-card .mr-result .val{font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:700;color:var(--ac)}
+
+/* Billing table */
+.bill-summary{background:var(--s2);border:1px solid var(--bd);border-radius:var(--rs);padding:18px;margin-bottom:14px}
+.bill-row{display:flex;justify-content:space-between;padding:6px 0;font-size:13px}
+.bill-row.total{border-top:2px solid var(--bd);margin-top:8px;padding-top:10px;font-weight:700;font-size:15px}
+.bill-row .bill-label{color:var(--tx2)}
+.bill-row .bill-val{font-family:'JetBrains Mono',monospace;font-weight:600}
+.bill-row.positive .bill-val{color:var(--gn)}
+.bill-row.negative .bill-val{color:var(--rd)}
+
+/* Tenant detail card */
+.td-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+.td-card{background:var(--s2);border:1px solid var(--bd);border-radius:var(--rs);padding:16px}
+.td-card h4{font-size:12px;color:var(--tx3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;font-weight:600}
+.td-field{display:flex;justify-content:space-between;padding:5px 0;font-size:13px;border-bottom:1px solid var(--bd)}
+.td-field:last-child{border-bottom:none}
+.td-field .lbl{color:var(--tx3)}
+.td-field .val{font-weight:600}
+
+/* Wizard overlay */
+.wiz-overlay{position:fixed;inset:0;background:var(--bg0);z-index:1000;display:flex;align-items:center;justify-content:center}
+.wiz-box{background:var(--s1);border:1px solid var(--bd);border-radius:16px;padding:36px;width:92%;max-width:580px;max-height:90vh;overflow-y:auto}
+.wiz-box h2{font-size:22px;font-weight:800;margin-bottom:6px;letter-spacing:-.3px}
+.wiz-box .wiz-sub{color:var(--tx3);font-size:13px;margin-bottom:24px}
+.wiz-steps{display:flex;gap:6px;margin-bottom:24px}
+.wiz-step{flex:1;height:4px;border-radius:2px;background:var(--s3)}
+.wiz-step.done{background:var(--ac)}
+.wiz-step.cur{background:var(--ac);opacity:.5}
+.wiz-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:24px}
+
+/* Heatmap */
+.hm{display:grid;grid-template-columns:auto repeat(12,1fr);gap:3px;font-size:11px}
+.hm-h{text-align:center;color:var(--tx3);font-family:'JetBrains Mono',monospace;font-size:9px;padding:3px 2px}
+.hm-l{padding:5px 6px 5px 0;text-align:right;color:var(--tx2);font-size:10px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:90px}
+.hm-c{border-radius:3px;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:8px;color:transparent;transition:all .15s;cursor:default;min-height:26px;aspect-ratio:1.5}
+.hm-c:hover{color:var(--tx);transform:scale(1.08);z-index:2}
+
+@media(max-width:1024px){.g2,.g3{grid-template-columns:1fr}}
+@media(max-width:768px){.sidebar{transform:translateX(-100%)}.sidebar.open{transform:translateX(0)}.main{margin-left:0}.top{left:0}.mob-tog{display:block}.sr{grid-template-columns:1fr 1fr}.mc{padding:16px}.mr-card{grid-template-columns:1fr;gap:10px}}
+@media(max-width:480px){.sr{grid-template-columns:1fr}}
+::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--bd);border-radius:3px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}.fu{animation:fadeUp .3s ease forwards}
+</style>
+</head>
+<body>
+<div class="so" id="sov" onclick="toggleSB()"></div>
+<aside class="sidebar" id="sb">
+  <div class="sb-brand"><div class="sb-logo">⚡</div><div><div class="sb-title">StromTracker</div><div class="sb-sub" id="sb-building">Gebäude</div></div></div>
+  <nav class="sb-nav">
+    <div class="sb-sec">Übersicht</div>
+    <div class="sb-item on" data-p="dashboard" onclick="go('dashboard',this)"><span class="ic">📊</span>Dashboard</div>
+    <div class="sb-item" data-p="readings" onclick="go('readings',this)"><span class="ic">📟</span>Zählerstände</div>
+    <div class="sb-item" data-p="analytics" onclick="go('analytics',this)"><span class="ic">📈</span>Analyse</div>
+    <div class="sb-sec">Verwaltung</div>
+    <div class="sb-item" data-p="tenants" onclick="go('tenants',this)"><span class="ic">🏢</span>Mieter<span class="bg" id="b-tc">0</span></div>
+    <div class="sb-item" data-p="billing" onclick="go('billing',this)"><span class="ic">📄</span>Abrechnung</div>
+    <div class="sb-item" data-p="payments" onclick="go('payments',this)"><span class="ic">💶</span>Abschläge</div>
+    <div class="sb-item" data-p="history" onclick="go('history',this)"><span class="ic">📋</span>Verlauf<span class="bg" id="b-ec">0</span></div>
+    <div class="sb-sec">System</div>
+    <div class="sb-item" data-p="settings" onclick="go('settings',this)"><span class="ic">⚙️</span>Einstellungen</div>
+  </nav>
+  <div class="sb-foot"><span class="sd"></span>Lokal gespeichert</div>
+</aside>
+<header class="top">
+  <div style="display:flex;align-items:center;gap:12px"><button class="mob-tog" onclick="toggleSB()">☰</button><div class="top-t" id="topT">Dashboard</div></div>
+  <div class="top-r"><div class="clk" id="clk"></div></div>
+</header>
+<div class="main"><div class="mc" id="mc">
+
+<!-- SETUP WIZARD -->
+<div class="wiz-overlay" id="wizard" style="display:none">
+<div class="wiz-box">
+  <div class="wiz-steps"><div class="wiz-step" id="ws1"></div><div class="wiz-step" id="ws2"></div><div class="wiz-step" id="ws3"></div></div>
+  <div id="wiz-content"></div>
+</div>
+</div>
+
+<!-- DASHBOARD -->
+<div class="page on fu" id="p-dashboard">
+  <div class="ph"><h2>Dashboard</h2><p id="d-sub"></p></div>
+  <div class="sr" id="d-stats"></div>
+  <div id="d-alerts" style="margin-bottom:18px"></div>
+  <div class="g3">
+    <div class="card"><div class="ch"><h3>Monatsverbrauch</h3><select id="d-yr" onchange="rDash()" style="padding:4px 9px;font-size:11px"></select></div><div class="cb"><div class="cw"><canvas id="cBar"></canvas></div></div></div>
+    <div class="card"><div class="ch"><h3>Anteil Mieter</h3></div><div class="cb"><div class="cw"><canvas id="cDon"></canvas></div></div></div>
+  </div>
+  <div class="g2">
+    <div class="card"><div class="ch"><h3>Ranking</h3></div><div class="cb" id="d-rank"></div></div>
+    <div class="card"><div class="ch"><h3>Prognose</h3></div><div class="cb" id="d-prog"></div></div>
+  </div>
+</div>
+
+<!-- READINGS -->
+<div class="page" id="p-readings">
+  <div class="ph"><h2>Zählerstände erfassen</h2><p>Monatliche Zählerablesung für alle Mieter</p></div>
+  <div class="card">
+    <div class="ch"><h3>Ablesung</h3></div>
+    <div class="cb">
+      <div class="fr">
+        <div class="fg"><label>Monat</label><input type="month" id="r-month"></div>
+      </div>
+      <div id="r-meters"></div>
+      <div class="bgrp" style="margin-top:14px">
+        <button class="btn ba" onclick="saveReadings()">✓ Alle Stände speichern</button>
+      </div>
+    </div>
+  </div>
+  <div class="card" id="r-main-card">
+    <div class="ch"><h3>Hauptzähler Gebäude</h3></div>
+    <div class="cb">
+      <div class="fr">
+        <div class="fg"><label>Zählerstand Hauptzähler</label><input type="number" id="r-main" step="0.01" placeholder="Aktueller Stand"></div>
+        <div class="fg"><label>Vorheriger Stand</label><input type="text" id="r-main-prev" disabled style="opacity:.6"></div>
+        <div class="fg"><label>Allgemeinstrom (berechnet)</label><input type="text" id="r-common" disabled style="color:var(--or);opacity:1"></div>
+      </div>
+      <button class="btn ba bsm" onclick="saveMainReading()">Hauptzähler speichern</button>
+    </div>
+  </div>
+</div>
+
+<!-- ANALYTICS -->
+<div class="page" id="p-analytics">
+  <div class="ph"><h2>Analyse</h2><p>Verbrauch, Kosten, Trends</p></div>
+  <div class="sr" id="a-stats"></div>
+  <div class="card">
+    <div class="ch"><h3>Kosten vs. Verbrauch</h3><select id="a-yr" onchange="rAnalytics()" style="padding:4px 9px;font-size:11px"></select></div>
+    <div class="cb"><div class="cw"><canvas id="cCK"></canvas></div></div>
+  </div>
+  <div class="card"><div class="ch"><h3>Heatmap kWh</h3></div><div class="cb" id="a-hm"></div></div>
+</div>
+
+<!-- TENANTS -->
+<div class="page" id="p-tenants">
+  <div class="ph"><h2>Mieter verwalten</h2><p>Büros, Kontakte, Zähler, Flächen</p></div>
+  <div class="card">
+    <div class="ch"><h3>Neuen Mieter anlegen</h3><button class="btn bg_ bsm" onclick="toggleTForm()" id="tf-tog">+ Formular öffnen</button></div>
+    <div class="cb" id="t-form" style="display:none">
+      <div class="fr">
+        <div class="fg"><label>Firma / Name *</label><input type="text" id="tf-name" placeholder="Müller GmbH"></div>
+        <div class="fg"><label>Ansprechpartner</label><input type="text" id="tf-contact" placeholder="Max Müller"></div>
+        <div class="fg"><label>E-Mail</label><input type="email" id="tf-email" placeholder="max@mueller.de"></div>
+        <div class="fg"><label>Telefon</label><input type="text" id="tf-phone" placeholder="+49 ..."></div>
+      </div>
+      <div class="fr">
+        <div class="fg"><label>Büro / Einheit *</label><input type="text" id="tf-unit" placeholder="2.OG links"></div>
+        <div class="fg"><label>Fläche (m²)</label><input type="number" id="tf-area" placeholder="85" step="0.1" min="0"></div>
+        <div class="fg"><label>Zählernummer *</label><input type="text" id="tf-meter" placeholder="Z-001234"></div>
+        <div class="fg"><label>Einzugsdatum</label><input type="date" id="tf-movein"></div>
+      </div>
+      <div class="fr">
+        <div class="fg"><label>Monatl. Abschlag (€)</label><input type="number" id="tf-advance" placeholder="120" step="0.01" min="0"></div>
+        <div class="fg"><label>Anfangs-Zählerstand</label><input type="number" id="tf-initread" placeholder="10000" step="0.01"></div>
+        <div class="fg"><label>Notizen</label><textarea id="tf-notes" placeholder="Freitext..."></textarea></div>
+      </div>
+      <div class="bgrp">
+        <button class="btn ba" onclick="saveTenant()">✓ Mieter speichern</button>
+        <button class="btn bg_" onclick="toggleTForm()">Abbrechen</button>
+      </div>
+    </div>
+  </div>
+  <div id="t-list"></div>
+</div>
+
+<!-- BILLING -->
+<div class="page" id="p-billing">
+  <div class="ph"><h2>Jahresabrechnung</h2><p>Verbrauch, Kosten und Saldo pro Mieter</p></div>
+  <div class="card">
+    <div class="ch"><h3>Abrechnung erstellen</h3></div>
+    <div class="cb">
+      <div class="fr">
+        <div class="fg"><label>Mieter</label><select id="bl-tenant"></select></div>
+        <div class="fg"><label>Jahr</label><select id="bl-year"></select></div>
+      </div>
+      <button class="btn ba" onclick="generateBill()">📄 Abrechnung erstellen</button>
+    </div>
+  </div>
+  <div id="bl-result"></div>
+</div>
+
+<!-- PAYMENTS -->
+<div class="page" id="p-payments">
+  <div class="ph"><h2>Abschläge</h2><p>Monatliche Vorauszahlungen verwalten</p></div>
+  <div class="card">
+    <div class="ch"><h3>Zahlung erfassen</h3></div>
+    <div class="cb">
+      <div class="fr">
+        <div class="fg"><label>Mieter</label><select id="pay-tenant"></select></div>
+        <div class="fg"><label>Monat</label><input type="month" id="pay-month"></div>
+        <div class="fg"><label>Betrag (€)</label><input type="number" id="pay-amount" step="0.01" min="0" placeholder="120.00"></div>
+        <div class="fg"><label>Notiz</label><input type="text" id="pay-note" placeholder="optional"></div>
+      </div>
+      <div class="bgrp">
+        <button class="btn ba" onclick="addPayment()">✓ Zahlung buchen</button>
+        <button class="btn bg_" onclick="autoBookAdvances()">📋 Alle Abschläge buchen</button>
+      </div>
+    </div>
+  </div>
+  <div class="card"><div class="ch"><h3>Zahlungsübersicht</h3></div>
+    <div id="pay-kpi" class="kpi" style="border-bottom:1px solid var(--bd)"></div>
+    <div class="cb np"><div class="table-wrap" id="pay-tbl"></div></div>
+  </div>
+</div>
+
+<!-- HISTORY -->
+<div class="page" id="p-history">
+  <div class="ph"><h2>Verlauf</h2><p>Alle Zählerstände und berechneter Verbrauch</p></div>
+  <div class="card">
+    <div class="ch"><h3>Filter</h3></div>
+    <div class="cb"><div class="fr" style="margin-bottom:0"><div class="fg"><label>Mieter</label><select id="h-t" onchange="rHistory()"><option value="">Alle</option></select></div><div class="fg"><label>Jahr</label><select id="h-y" onchange="rHistory()"><option value="">Alle</option></select></div></div></div>
+  </div>
+  <div class="card">
+    <div class="ch"><h3>Zählerstände</h3><button class="btn bg_ bsm" onclick="exportCSV()">⬇ CSV</button></div>
+    <div id="h-kpi" class="kpi" style="border-bottom:1px solid var(--bd)"></div>
+    <div class="cb np"><div class="table-wrap" id="h-tbl"></div></div>
+  </div>
+</div>
+
+<!-- SETTINGS -->
+<div class="page" id="p-settings">
+  <div class="ph"><h2>Einstellungen</h2><p>Gebäude, Kosten, Daten</p></div>
+  <div class="card"><div class="ch"><h3>Gebäude & Kosten</h3></div><div class="cb">
+    <div class="fr">
+      <div class="fg"><label>Gebäudename</label><input type="text" id="sg-name" onchange="sSet('buildingName',this.value)"></div>
+      <div class="fg"><label>Adresse</label><input type="text" id="sg-addr" onchange="sSet('address',this.value)"></div>
+      <div class="fg"><label>Hauptzähler-Nr.</label><input type="text" id="sg-main" onchange="sSet('mainMeter',this.value)"></div>
+    </div>
+    <div class="fr">
+      <div class="fg"><label>Strompreis (€/kWh)</label><input type="number" id="sg-price" step="0.001" onchange="sSet('price',+this.value)"></div>
+      <div class="fg"><label>Grundgebühr (€/Monat/Zähler)</label><input type="number" id="sg-base" step="0.01" onchange="sSet('baseFee',+this.value)"></div>
+      <div class="fg"><label>Allgemeinstrom-Verteilung</label><select id="sg-dist" onchange="sSet('distKey',this.value)"><option value="area">Nach Fläche (m²)</option><option value="consumption">Nach Verbrauch</option><option value="equal">Gleichmäßig</option></select></div>
+    </div>
+  </div></div>
+  <div class="card"><div class="ch"><h3>Datenverwaltung</h3></div><div class="cb">
+    <div class="stg-row"><div class="stg-info"><h4>JSON Export</h4><p>Komplettes Backup</p></div><button class="btn bg_ bsm" onclick="exportJSON()">⬇ Export</button></div>
+    <div class="stg-row"><div class="stg-info"><h4>JSON Import</h4><p>Backup einspielen</p></div><div><input type="file" id="imp" accept=".json" style="display:none" onchange="importJSON(event)"><button class="btn bg_ bsm" onclick="document.getElementById('imp').click()">⬆ Import</button></div></div>
+    <div class="stg-row"><div class="stg-info"><h4>Demo-Daten</h4><p>5 Mieter, 2 Jahre Testdaten</p></div><button class="btn bg_ bsm" onclick="loadDemo()">▶ Demo laden</button></div>
+    <div class="stg-row"><div class="stg-info"><h4>Setup-Wizard</h4><p>Ersteinrichtung erneut starten</p></div><button class="btn bg_ bsm" onclick="startWizard()">🔄 Wizard starten</button></div>
+    <div class="stg-row"><div class="stg-info"><h4 style="color:var(--rd)">Alle Daten löschen</h4><p>Unwiderruflich</p></div><button class="btn br bsm" onclick="clearAll()">Löschen</button></div>
+  </div></div>
+</div>
+
+</div></div>
+
+<script>
+// ===== DATA =====
+const SK='stpro2',CL=['#e8b931','#5b9ef0','#2dd4a0','#ef6060','#9b7ef0','#f0923c','#22d3ee','#f472b6','#a3e635','#c084fc'],MD=['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
+const dd=()=>({tenants:[],readings:[],mainReadings:[],payments:[],settings:{price:.35,baseFee:10,buildingName:'Hauptgebäude',address:'',mainMeter:'HZ-0001',distKey:'area',setupDone:false}});
+let D=(()=>{try{const r=localStorage.getItem(SK);return r?{...dd(),...JSON.parse(r)}:dd();}catch{return dd();}})();
+const sv=()=>localStorage.setItem(SK,JSON.stringify(D));
+const id=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const tc=tid=>{const i=D.tenants.findIndex(t=>t.id===tid);return CL[(i<0?0:i)%CL.length];};
+const tn=tid=>(D.tenants.find(t=>t.id===tid)||{}).name||'?';
+const fm=m=>{if(!m)return'-';const[y,mo]=m.split('-');return MD[+mo-1]+' '+y;};
+const fn=(n,d=1)=>Number(n||0).toLocaleString('de-DE',{minimumFractionDigits:d,maximumFractionDigits:d});
+const cm=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');};
+const cy=()=>new Date().getFullYear();
+const aY=()=>[...new Set(D.readings.map(r=>r.month.slice(0,4)))].sort();
+const fYS=s=>{const y=aY();if(!y.length)y.push(cy().toString());const p=s.value;s.innerHTML=y.map(v=>'<option>'+v+'</option>').join('');s.value=y.includes(p)?p:y[y.length-1];};
+
+// Get consumption for a tenant in a month
+function getConsumption(tid, month) {
+  const cur = D.readings.find(r=>r.tenantId===tid&&r.month===month);
+  if(!cur) return null;
+  // Find previous reading
+  const prev = getPrevReading(tid, month);
+  if(prev===null) return null;
+  return Math.max(0, cur.reading - prev);
+}
+
+function getPrevReading(tid, month) {
+  const allR = D.readings.filter(r=>r.tenantId===tid).sort((a,b)=>a.month.localeCompare(b.month));
+  const idx = allR.findIndex(r=>r.month===month);
+  if(idx<=0) {
+    // Check initial reading from tenant
+    const t = D.tenants.find(t=>t.id===tid);
+    if(t && t.initReading!==undefined && t.initReading!==null) return t.initReading;
+    return null;
+  }
+  return allR[idx-1].reading;
+}
+
+function getMonthlyConsumptions(tid, year) {
+  const result = [];
+  for(let m=1;m<=12;m++) {
+    const key = year+'-'+String(m).padStart(2,'0');
+    result.push(getConsumption(tid, key)||0);
+  }
+  return result;
+}
+
+function calcCost(kwh) {
+  return kwh * (D.settings.price||.35) + (D.settings.baseFee||0);
+}
+
+// Charts
+let CH={};const dC=k=>{if(CH[k]){CH[k].destroy();delete CH[k];}};
+Chart.defaults.color='#525870';Chart.defaults.borderColor='#262c3a';Chart.defaults.font.family="'Instrument Sans',sans-serif";Chart.defaults.font.size=11;Chart.defaults.plugins.legend.labels.usePointStyle=true;Chart.defaults.plugins.legend.labels.pointStyleWidth=8;Chart.defaults.plugins.legend.labels.boxHeight=6;
+
+// ===== NAV =====
+function go(p,el){
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('on'));
+  document.getElementById('p-'+p).classList.add('on');
+  document.querySelectorAll('.sb-item').forEach(n=>n.classList.remove('on'));
+  if(el)el.classList.add('on');
+  const T={dashboard:'Dashboard',readings:'Zählerstände',analytics:'Analyse',tenants:'Mieter',billing:'Abrechnung',payments:'Abschläge',history:'Verlauf',settings:'Einstellungen'};
+  document.getElementById('topT').textContent=T[p]||'';
+  closeSB();rPage(p);
+}
+function rPage(p){
+  updBadges();
+  const fn={dashboard:rDash,readings:rReadings,analytics:rAnalytics,tenants:rTenants,billing:rBilling,payments:rPayments,history:rHistory,settings:rSettings};
+  if(fn[p])fn[p]();
+}
+function updBadges(){document.getElementById('b-tc').textContent=D.tenants.length;document.getElementById('b-ec').textContent=D.readings.length;document.getElementById('sb-building').textContent=D.settings.buildingName||'Gebäude';}
+function toggleSB(){document.getElementById('sb').classList.toggle('open');document.getElementById('sov').classList.toggle('open');}
+function closeSB(){document.getElementById('sb').classList.remove('open');document.getElementById('sov').classList.remove('open');}
+function updClk(){const d=new Date();document.getElementById('clk').textContent=d.toLocaleDateString('de-DE',{day:'2-digit',month:'short',year:'numeric'})+' '+d.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'});}
+setInterval(updClk,15000);updClk();
+
+// ===== WIZARD =====
+let wizStep=1;
+function startWizard(){wizStep=1;document.getElementById('wizard').style.display='flex';renderWizStep();}
+function renderWizStep(){
+  document.getElementById('ws1').className='wiz-step'+(wizStep>=1?' done':'')+(wizStep===1?' cur':'');
+  document.getElementById('ws2').className='wiz-step'+(wizStep>=2?' done':'')+(wizStep===2?' cur':'');
+  document.getElementById('ws3').className='wiz-step'+(wizStep>=3?' done':'')+(wizStep===3?' cur':'');
+  const c=document.getElementById('wiz-content');
+  if(wizStep===1){
+    c.innerHTML=`<h2>⚡ Willkommen bei StromTracker</h2><p class="wiz-sub">Schritt 1: Gebäudedaten eingeben</p>
+    <div class="fr"><div class="fg"><label>Gebäudename *</label><input type="text" id="w-name" value="${D.settings.buildingName||''}" placeholder="Gewerbepark Mitte"></div><div class="fg"><label>Adresse</label><input type="text" id="w-addr" value="${D.settings.address||''}" placeholder="Musterstr. 1, 12345 Stadt"></div></div>
+    <div class="fr"><div class="fg"><label>Hauptzähler-Nr.</label><input type="text" id="w-main" value="${D.settings.mainMeter||''}" placeholder="HZ-0001"></div><div class="fg"><label>Strompreis (€/kWh)</label><input type="number" id="w-price" value="${D.settings.price||.35}" step="0.001"></div><div class="fg"><label>Grundgebühr (€/Monat)</label><input type="number" id="w-base" value="${D.settings.baseFee||10}" step="0.01"></div></div>
+    <div class="wiz-actions"><button class="btn ba" onclick="wizNext()">Weiter →</button></div>`;
+  } else if(wizStep===2){
+    c.innerHTML=`<h2>🏢 Mieter anlegen</h2><p class="wiz-sub">Schritt 2: Ersten Mieter hinzufügen (weitere können später ergänzt werden)</p>
+    <div class="fr"><div class="fg"><label>Firma / Name *</label><input type="text" id="w-tname" placeholder="Müller GmbH"></div><div class="fg"><label>Büro / Einheit *</label><input type="text" id="w-tunit" placeholder="EG links"></div></div>
+    <div class="fr"><div class="fg"><label>Zählernummer *</label><input type="text" id="w-tmeter" placeholder="Z-1001"></div><div class="fg"><label>Fläche (m²)</label><input type="number" id="w-tarea" placeholder="80" step="0.1"></div><div class="fg"><label>Monatl. Abschlag (€)</label><input type="number" id="w-tadv" placeholder="120" step="0.01"></div></div>
+    <div class="fr"><div class="fg"><label>Anfangs-Zählerstand</label><input type="number" id="w-tinit" placeholder="10000" step="0.01"></div></div>
+    ${D.tenants.length?'<p style="color:var(--gn);font-size:12px;margin-bottom:8px">✓ '+D.tenants.length+' Mieter bereits angelegt</p>':''}
+    <div class="wiz-actions"><button class="btn bg_" onclick="wizBack()">← Zurück</button><button class="btn bg_" onclick="wizAddTenant()">+ Mieter hinzufügen</button><button class="btn ba" onclick="wizNext()">Weiter →</button></div>`;
+  } else if(wizStep===3){
+    c.innerHTML=`<h2>✅ Fertig!</h2><p class="wiz-sub">Schritt 3: Setup abgeschlossen</p>
+    <div style="background:var(--s2);border-radius:var(--rs);padding:16px;margin-bottom:16px">
+      <p style="margin-bottom:8px"><strong>Gebäude:</strong> ${D.settings.buildingName}</p>
+      <p style="margin-bottom:8px"><strong>Mieter:</strong> ${D.tenants.length} angelegt</p>
+      <p style="margin-bottom:8px"><strong>Strompreis:</strong> ${fn(D.settings.price,3)} €/kWh</p>
+      <p><strong>Hauptzähler:</strong> ${D.settings.mainMeter||'-'}</p>
+    </div>
+    <p style="color:var(--tx2);font-size:13px;margin-bottom:6px">Nächste Schritte:</p>
+    <p style="color:var(--tx3);font-size:12px">1. Gehe zu "Zählerstände" um die erste Ablesung einzutragen<br>2. Unter "Mieter" kannst du weitere Mieter hinzufügen<br>3. Unter "Abschläge" monatliche Vorauszahlungen buchen</p>
+    <div class="wiz-actions"><button class="btn bg_" onclick="wizBack()">← Zurück</button><button class="btn ba" onclick="wizFinish()">🚀 Los geht's!</button></div>`;
+  }
+}
+
+function wizNext(){
+  if(wizStep===1){
+    const n=document.getElementById('w-name').value.trim();
+    if(!n)return alert('Gebäudename eingeben!');
+    D.settings.buildingName=n;
+    D.settings.address=document.getElementById('w-addr').value.trim();
+    D.settings.mainMeter=document.getElementById('w-main').value.trim();
+    D.settings.price=parseFloat(document.getElementById('w-price').value)||.35;
+    D.settings.baseFee=parseFloat(document.getElementById('w-base').value)||0;
+    sv();
+  }
+  wizStep++;renderWizStep();
+}
+function wizBack(){wizStep--;renderWizStep();}
+function wizAddTenant(){
+  const name=document.getElementById('w-tname').value.trim(),unit=document.getElementById('w-tunit').value.trim(),meter=document.getElementById('w-tmeter').value.trim();
+  if(!name||!unit||!meter)return alert('Name, Büro und Zählernummer sind Pflicht!');
+  const area=parseFloat(document.getElementById('w-tarea').value)||0;
+  const adv=parseFloat(document.getElementById('w-tadv').value)||0;
+  const init=parseFloat(document.getElementById('w-tinit').value);
+  D.tenants.push({id:id(),name,contact:'',email:'',phone:'',unit,area,meter,moveIn:'',monthlyAdvance:adv,initReading:isNaN(init)?null:init,notes:'',status:'active'});
+  sv();
+  ['w-tname','w-tunit','w-tmeter','w-tarea','w-tadv','w-tinit'].forEach(x=>document.getElementById(x).value='');
+  renderWizStep();
+}
+function wizFinish(){D.settings.setupDone=true;sv();document.getElementById('wizard').style.display='none';rDash();updBadges();}
+
+// ===== DASHBOARD =====
+function rDash(){
+  const m=cm(),y=cy().toString();
+  document.getElementById('d-sub').textContent=(D.settings.buildingName||'Gebäude')+' – '+fm(m);
+
+  // Calc current month totals
+  let mKwh=0,mCost=0;
+  D.tenants.forEach(t=>{const c=getConsumption(t.id,m);if(c!==null){mKwh+=c;mCost+=calcCost(c);}});
+
+  // Prev month
+  const pd=new Date();pd.setMonth(pd.getMonth()-1);
+  const pm=pd.getFullYear()+'-'+String(pd.getMonth()+1).padStart(2,'0');
+  let pmKwh=0;
+  D.tenants.forEach(t=>{const c=getConsumption(t.id,pm);if(c!==null)pmKwh+=c;});
+  const kD=pmKwh?((mKwh-pmKwh)/pmKwh*100):0;
+
+  // Year totals
+  let yKwh=0,yCost=0;
+  for(let mo=1;mo<=12;mo++){const k=y+'-'+String(mo).padStart(2,'0');D.tenants.forEach(t=>{const c=getConsumption(t.id,k);if(c!==null){yKwh+=c;yCost+=calcCost(c);}});}
+  const yMonths=new Set();D.readings.filter(r=>r.month.startsWith(y)).forEach(r=>yMonths.add(r.month));
+  const avgM=yMonths.size?yKwh/yMonths.size:0;
+
+  // Payments this year
+  const yPay=D.payments.filter(p=>p.month&&p.month.startsWith(y)).reduce((s,p)=>s+(p.amount||0),0);
+
+  const bg=v=>v===0?'':(v>0?`<span class="bu">↑${fn(Math.abs(v))}%</span>`:`<span class="bd_">↓${fn(Math.abs(v))}%</span>`);
+  document.getElementById('d-stats').innerHTML=`
+    <div class="sc cy"><div class="si">⚡</div><div class="sl">Verbrauch Monat</div><div class="sv">${fn(mKwh,0)} <span class="su">kWh</span></div><div class="sf">${bg(kD)} <span style="color:var(--tx3)">vs. Vormonat</span></div></div>
+    <div class="sc cg"><div class="si">💰</div><div class="sl">Kosten Monat</div><div class="sv">${fn(mCost,2)} <span class="su">€</span></div></div>
+    <div class="sc cb_"><div class="si">📅</div><div class="sl">Gesamt ${y}</div><div class="sv">${fn(yKwh,0)} <span class="su">kWh</span></div><div class="sf"><span class="bn">${fn(yCost,2)} €</span></div></div>
+    <div class="sc cp"><div class="si">💶</div><div class="sl">Abschläge ${y}</div><div class="sv">${fn(yPay,2)} <span class="su">€</span></div><div class="sf"><span style="color:var(--tx3)">Saldo: ${fn(yPay-yCost,2)} €</span></div></div>
+    <div class="sc cr"><div class="si">📐</div><div class="sl">Ø / Monat</div><div class="sv">${fn(avgM,0)} <span class="su">kWh</span></div><div class="sf"><span style="color:var(--tx3)">${D.tenants.length} Mieter</span></div></div>`;
+
+  // Alerts
+  let alerts=[];
+  D.tenants.forEach(t=>{
+    const r=D.readings.find(r=>r.tenantId===t.id&&r.month===cm());
+    if(!r) alerts.push({type:'miss',text:`${t.name}: Ablesung für ${fm(cm())} fehlt`});
+    const c=getConsumption(t.id,cm());
+    const cp=getConsumption(t.id,pm);
+    if(c!==null&&cp!==null&&cp>0&&c>cp*1.5) alerts.push({type:'warn',text:`${t.name}: Verbrauch ${fn(c,0)} kWh – ${fn(((c-cp)/cp*100),0)}% über Vormonat!`});
+  });
+  const aEl=document.getElementById('d-alerts');
+  aEl.innerHTML=alerts.length?alerts.map(a=>`<div style="margin-bottom:6px"><span class="alert-badge ${a.type==='miss'?'alert-miss':'alert-warn'}">${a.type==='miss'?'⚠ Fehlend':'⚠ Warnung'}</span> <span style="font-size:13px;color:var(--tx2)">${a.text}</span></div>`).join(''):'';
+
+  renderDashCharts();renderRanking();renderPrognose();
+}
+
+function renderDashCharts(){
+  const s=document.getElementById('d-yr');fYS(s);const yr=s.value;
+  dC('bar');
+  const ds=D.tenants.map(t=>({label:t.name,data:getMonthlyConsumptions(t.id,yr),backgroundColor:tc(t.id)+'cc',borderColor:tc(t.id),borderWidth:1,borderRadius:4,borderSkipped:false}));
+  CH.bar=new Chart(document.getElementById('cBar'),{type:'bar',data:{labels:MD,datasets:ds},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,ticks:{callback:v=>v+' kWh'}}},interaction:{mode:'index'}}});
+  dC('don');
+  const dD=D.tenants.map(t=>{let tot=0;for(let m=1;m<=12;m++){const c=getConsumption(t.id,yr+'-'+String(m).padStart(2,'0'));if(c)tot+=c;}return tot;});
+  CH.don=new Chart(document.getElementById('cDon'),{type:'doughnut',data:{labels:D.tenants.map(t=>t.name),datasets:[{data:dD,backgroundColor:D.tenants.map(t=>tc(t.id)),borderWidth:0,hoverOffset:8}]},options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{position:'bottom'}}}});
+}
+
+function renderRanking(){
+  const el=document.getElementById('d-rank'),yr=cy().toString();
+  const rk=D.tenants.map(t=>{let kwh=0;for(let m=1;m<=12;m++){const c=getConsumption(t.id,yr+'-'+String(m).padStart(2,'0'));if(c)kwh+=c;}return{...t,kwh};}).sort((a,b)=>b.kwh-a.kwh);
+  if(!rk.length){el.innerHTML='<div class="empty" style="padding:20px;text-align:center;color:var(--tx3)">Keine Mieter</div>';return;}
+  el.innerHTML=rk.map((r,i)=>`<div class="ri"><div class="rn ${i===0?'t1':''}">${i+1}</div><div class="td" style="background:${tc(r.id)}"></div><div class="rinfo"><div class="nm">${r.name}</div><div class="dt">${r.unit} · ${r.meter}</div></div><div class="rv">${fn(r.kwh,0)} <span class="ut">kWh</span></div></div>`).join('');
+}
+
+function renderPrognose(){
+  const el=document.getElementById('d-prog'),yr=cy().toString();
+  let h='';
+  D.tenants.forEach(t=>{
+    let tot=0,ms=0;
+    for(let m=1;m<=12;m++){const c=getConsumption(t.id,yr+'-'+String(m).padStart(2,'0'));if(c){tot+=c;ms++;}}
+    if(!ms)return;
+    const proj=(tot/ms)*12,pct=Math.min((tot/proj)*100,100),pC=proj*(D.settings.price||.35)+(D.settings.baseFee||0)*12;
+    h+=`<div class="pr"><div class="prh"><div class="prl"><span class="td" style="background:${tc(t.id)}"></span>${t.name}</div><div class="prs">${fn(tot,0)}/${fn(proj,0)} kWh · ~${fn(pC,2)}€</div></div><div class="prt"><div class="prf" style="width:${pct}%;background:${tc(t.id)}"></div></div></div>`;
+  });
+  el.innerHTML=h||'<div style="text-align:center;color:var(--tx3);padding:20px">Keine Daten</div>';
+}
+
+// ===== READINGS =====
+function rReadings(){
+  document.getElementById('r-month').value=cm();
+  renderMeterCards();
+  renderMainMeter();
+}
+
+function renderMeterCards(){
+  const month=document.getElementById('r-month').value;
+  const el=document.getElementById('r-meters');
+  if(!D.tenants.length){el.innerHTML='<div style="text-align:center;color:var(--tx3);padding:30px">Erst Mieter anlegen!</div>';return;}
+  el.innerHTML=D.tenants.filter(t=>t.status==='active').map(t=>{
+    const existing=D.readings.find(r=>r.tenantId===t.id&&r.month===month);
+    const prev=getPrevReading(t.id,month);
+    const curVal=existing?existing.reading:'';
+    const consumption=(existing&&prev!==null)?Math.max(0,existing.reading-prev):null;
+    return`<div class="mr-card">
+      <div class="mr-info"><div class="mr-name"><span class="td" style="background:${tc(t.id)}"></span>${t.name}</div><div class="mr-detail">${t.unit} · Zähler: ${t.meter}</div></div>
+      <div class="mr-prev"><div class="lbl">Vorheriger Stand</div><div class="val">${prev!==null?fn(prev,1):'-'}</div></div>
+      <div class="mr-input"><input type="number" data-tid="${t.id}" class="reading-input" value="${curVal}" placeholder="Aktueller Stand" step="0.01" oninput="calcReadingDiff(this,'${t.id}')"></div>
+      <div class="mr-result"><div class="lbl">Verbrauch</div><div class="val" id="rdiff-${t.id}">${consumption!==null?fn(consumption,1)+' kWh':'-'}</div></div>
+    </div>`;
+  }).join('');
+}
+
+function calcReadingDiff(input,tid){
+  const month=document.getElementById('r-month').value;
+  const prev=getPrevReading(tid,month);
+  const val=parseFloat(input.value);
+  const el=document.getElementById('rdiff-'+tid);
+  if(!isNaN(val)&&prev!==null){
+    const diff=Math.max(0,val-prev);
+    el.textContent=fn(diff,1)+' kWh';
+    el.style.color=diff>0?'var(--ac)':'var(--tx3)';
+  } else {
+    el.textContent='-';el.style.color='var(--ac)';
+  }
+}
+
+document.addEventListener('change',e=>{if(e.target.id==='r-month')renderMeterCards();});
+
+function saveReadings(){
+  const month=document.getElementById('r-month').value;
+  if(!month)return alert('Monat wählen!');
+  const inputs=document.querySelectorAll('.reading-input');
+  let saved=0;
+  inputs.forEach(inp=>{
+    const tid=inp.dataset.tid,val=parseFloat(inp.value);
+    if(isNaN(val))return;
+    const ex=D.readings.find(r=>r.tenantId===tid&&r.month===month);
+    if(ex){ex.reading=val;ex.updatedAt=Date.now();}
+    else D.readings.push({id:id(),tenantId:tid,month,reading:val,createdAt:Date.now()});
+    saved++;
+  });
+  if(!saved)return alert('Keine Stände eingegeben!');
+  sv();
+  alert(saved+' Zählerstand/stände gespeichert!');
+  renderMeterCards();
+}
+
+function renderMainMeter(){
+  const month=document.getElementById('r-month').value;
+  const ex=D.mainReadings.find(r=>r.month===month);
+  document.getElementById('r-main').value=ex?ex.reading:'';
+  // Find prev
+  const all=D.mainReadings.sort((a,b)=>a.month.localeCompare(b.month));
+  const idx=all.findIndex(r=>r.month===month);
+  const prev=idx>0?all[idx-1].reading:null;
+  document.getElementById('r-main-prev').value=prev!==null?fn(prev,1):'-';
+  // Calc common electricity
+  if(ex&&prev!==null){
+    const mainC=ex.reading-prev;
+    let tenantC=0;
+    D.tenants.forEach(t=>{const c=getConsumption(t.id,month);if(c)tenantC+=c;});
+    document.getElementById('r-common').value=fn(Math.max(0,mainC-tenantC),1)+' kWh (Allgemeinstrom)';
+  } else {
+    document.getElementById('r-common').value='-';
+  }
+}
+
+function saveMainReading(){
+  const month=document.getElementById('r-month').value;
+  const val=parseFloat(document.getElementById('r-main').value);
+  if(!month||isNaN(val))return alert('Monat und Stand eingeben!');
+  const ex=D.mainReadings.find(r=>r.month===month);
+  if(ex)ex.reading=val;
+  else D.mainReadings.push({id:id(),month,reading:val,createdAt:Date.now()});
+  sv();renderMainMeter();
+}
+
+// ===== ANALYTICS =====
+function rAnalytics(){
+  const s=document.getElementById('a-yr');fYS(s);const yr=s.value;
+  let tK=0,tC=0,ms=new Set();
+  for(let m=1;m<=12;m++){const k=yr+'-'+String(m).padStart(2,'0');D.tenants.forEach(t=>{const c=getConsumption(t.id,k);if(c){tK+=c;tC+=calcCost(c);ms.add(k);}});}
+  const ap=tK>0?tC/tK:0;
+  document.getElementById('a-stats').innerHTML=`
+    <div class="sc cy"><div class="si">⚡</div><div class="sl">Gesamt kWh</div><div class="sv">${fn(tK,0)}</div></div>
+    <div class="sc cg"><div class="si">💰</div><div class="sl">Gesamt €</div><div class="sv">${fn(tC,2)}</div></div>
+    <div class="sc cb_"><div class="si">📊</div><div class="sl">Ø €/kWh</div><div class="sv">${fn(ap,3)}</div></div>
+    <div class="sc cp"><div class="si">📅</div><div class="sl">Monate</div><div class="sv">${ms.size}</div></div>`;
+  dC('ck');
+  const kD=[],cD=[];
+  for(let m=1;m<=12;m++){const k=yr+'-'+String(m).padStart(2,'0');let mk=0,mc=0;D.tenants.forEach(t=>{const c=getConsumption(t.id,k);if(c){mk+=c;mc+=calcCost(c);}});kD.push(mk);cD.push(mc);}
+  CH.ck=new Chart(document.getElementById('cCK'),{data:{labels:MD,datasets:[{type:'bar',label:'kWh',data:kD,backgroundColor:'rgba(232,185,49,.3)',borderColor:'#e8b931',borderWidth:1,borderRadius:4,yAxisID:'y',order:2},{type:'line',label:'€',data:cD,borderColor:'#2dd4a0',backgroundColor:'rgba(45,212,160,.1)',fill:true,tension:.4,pointRadius:4,pointBackgroundColor:'#2dd4a0',yAxisID:'y1',order:1}]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom'}},scales:{y:{position:'left',ticks:{callback:v=>v+' kWh'}},y1:{position:'right',ticks:{callback:v=>v+' €'},grid:{display:false}}}}});
+  // Heatmap
+  const hb=document.getElementById('a-hm');
+  if(!D.tenants.length){hb.innerHTML='<div style="text-align:center;color:var(--tx3);padding:20px">Keine Daten</div>';return;}
+  let mx=0;D.tenants.forEach(t=>{for(let m=1;m<=12;m++){const c=getConsumption(t.id,yr+'-'+String(m).padStart(2,'0'));if(c&&c>mx)mx=c;}});if(!mx)mx=1;
+  let hh='<div class="hm"><div></div>';MD.forEach(m=>hh+=`<div class="hm-h">${m}</div>`);
+  D.tenants.forEach(t=>{hh+=`<div class="hm-l">${t.name}</div>`;for(let m=1;m<=12;m++){const k=yr+'-'+String(m).padStart(2,'0');const c=getConsumption(t.id,k)||0;const a=c>0?.15+(c/mx)*.7:.04;hh+=`<div class="hm-c" style="background:${tc(t.id)}${Math.round(a*255).toString(16).padStart(2,'0')}" title="${t.name}: ${fn(c,0)} kWh">${c>0?fn(c,0):''}</div>`;}});
+  hh+='</div>';hb.innerHTML=hh;
+}
+
+// ===== TENANTS =====
+function toggleTForm(){const f=document.getElementById('t-form');const b=document.getElementById('tf-tog');if(f.style.display==='none'){f.style.display='block';b.textContent='✕ Schließen';}else{f.style.display='none';b.textContent='+ Formular öffnen';}}
+
+function rTenants(){
+  const el=document.getElementById('t-list');
+  if(!D.tenants.length){el.innerHTML='<div class="card"><div class="cb" style="text-align:center;color:var(--tx3);padding:40px"><div style="font-size:40px;opacity:.4;margin-bottom:12px">🏢</div><h3 style="color:var(--tx2);margin-bottom:6px">Keine Mieter</h3><p>Klicke oben auf "+ Formular öffnen" um den ersten Mieter anzulegen.</p></div></div>';return;}
+  el.innerHTML=D.tenants.map(t=>{
+    const entries=D.readings.filter(r=>r.tenantId===t.id);
+    let totalKwh=0;entries.forEach(r=>{const c=getConsumption(t.id,r.month);if(c)totalKwh+=c;});
+    const lastR=entries.sort((a,b)=>b.month.localeCompare(a.month))[0];
+    const paidTotal=D.payments.filter(p=>p.tenantId===t.id).reduce((s,p)=>s+(p.amount||0),0);
+    return`<div class="card"><div class="ch"><h3 style="display:flex;align-items:center;gap:8px"><span class="td" style="background:${tc(t.id)}"></span>${t.name}</h3><div class="bgrp"><span class="alert-badge ${t.status==='active'?'alert-ok':'alert-miss'}">${t.status==='active'?'Aktiv':'Inaktiv'}</span><button class="btn br bsm" onclick="delTenant('${t.id}')">✕</button></div></div>
+    <div class="td-grid" style="padding:16px">
+      <div class="td-card"><h4>Kontakt</h4><div class="td-field"><span class="lbl">Firma</span><span class="val">${t.name}</span></div><div class="td-field"><span class="lbl">Ansprechpartner</span><span class="val">${t.contact||'-'}</span></div><div class="td-field"><span class="lbl">E-Mail</span><span class="val">${t.email||'-'}</span></div><div class="td-field"><span class="lbl">Telefon</span><span class="val">${t.phone||'-'}</span></div></div>
+      <div class="td-card"><h4>Objekt</h4><div class="td-field"><span class="lbl">Büro</span><span class="val">${t.unit}</span></div><div class="td-field"><span class="lbl">Fläche</span><span class="val">${t.area?fn(t.area,1)+' m²':'-'}</span></div><div class="td-field"><span class="lbl">Zähler</span><span class="val mn">${t.meter}</span></div><div class="td-field"><span class="lbl">Einzug</span><span class="val">${t.moveIn||'-'}</span></div></div>
+      <div class="td-card"><h4>Finanzen</h4><div class="td-field"><span class="lbl">Abschlag/Monat</span><span class="val mn">${t.monthlyAdvance?fn(t.monthlyAdvance,2)+' €':'-'}</span></div><div class="td-field"><span class="lbl">Gesamt bezahlt</span><span class="val mn">${fn(paidTotal,2)} €</span></div><div class="td-field"><span class="lbl">Gesamt kWh</span><span class="val mn">${fn(totalKwh,0)}</span></div><div class="td-field"><span class="lbl">Letzte Ablesung</span><span class="val">${lastR?fm(lastR.month):'-'}</span></div></div>
+    </div></div>`;
+  }).join('');
+}
+
+function saveTenant(){
+  const name=document.getElementById('tf-name').value.trim();
+  if(!name)return alert('Name ist Pflicht!');
+  const t={id:id(),name,contact:document.getElementById('tf-contact').value.trim(),email:document.getElementById('tf-email').value.trim(),phone:document.getElementById('tf-phone').value.trim(),unit:document.getElementById('tf-unit').value.trim()||'-',area:parseFloat(document.getElementById('tf-area').value)||0,meter:document.getElementById('tf-meter').value.trim()||'-',moveIn:document.getElementById('tf-movein').value,monthlyAdvance:parseFloat(document.getElementById('tf-advance').value)||0,initReading:parseFloat(document.getElementById('tf-initread').value),notes:document.getElementById('tf-notes').value.trim(),status:'active'};
+  if(isNaN(t.initReading))t.initReading=null;
+  D.tenants.push(t);sv();
+  ['tf-name','tf-contact','tf-email','tf-phone','tf-unit','tf-area','tf-meter','tf-movein','tf-advance','tf-initread','tf-notes'].forEach(x=>{const e=document.getElementById(x);if(e.tagName==='TEXTAREA')e.value='';else e.value='';});
+  toggleTForm();rTenants();
+}
+
+function delTenant(tid){
+  const c=D.readings.filter(r=>r.tenantId===tid).length;
+  if(!confirm(`"${tn(tid)}" löschen?${c?' '+c+' Ablesungen gehen verloren!':''}`))return;
+  D.tenants=D.tenants.filter(t=>t.id!==tid);D.readings=D.readings.filter(r=>r.tenantId!==tid);D.payments=D.payments.filter(p=>p.tenantId!==tid);
+  sv();rTenants();
+}
+
+// ===== BILLING =====
+function rBilling(){
+  const ts=document.getElementById('bl-tenant');
+  ts.innerHTML=D.tenants.map(t=>`<option value="${t.id}">${t.name}</option>`).join('');
+  const ys=document.getElementById('bl-year');
+  const yrs=aY();if(!yrs.length)yrs.push(cy().toString());
+  ys.innerHTML=yrs.map(y=>`<option>${y}</option>`).join('');
+  ys.value=yrs[yrs.length-1];
+}
+
+function generateBill(){
+  const tid=document.getElementById('bl-tenant').value;
+  const yr=document.getElementById('bl-year').value;
+  if(!tid)return alert('Mieter wählen!');
+  const t=D.tenants.find(t=>t.id===tid);
+  const el=document.getElementById('bl-result');
+
+  let rows='',totalKwh=0,totalCost=0;
+  for(let m=1;m<=12;m++){
+    const k=yr+'-'+String(m).padStart(2,'0');
+    const c=getConsumption(tid,k);
+    const cost=c!==null?calcCost(c):0;
+    totalKwh+=(c||0);totalCost+=cost;
+    const reading=D.readings.find(r=>r.tenantId===tid&&r.month===k);
+    rows+=`<tr><td>${MD[m-1]} ${yr}</td><td class="mn">${reading?fn(reading.reading,1):'-'}</td><td class="mn">${c!==null?fn(c,1):'-'}</td><td class="mn">${cost?fn(cost,2)+' €':'-'}</td></tr>`;
+  }
+
+  const totalPaid=D.payments.filter(p=>p.tenantId===tid&&p.month&&p.month.startsWith(yr)).reduce((s,p)=>s+(p.amount||0),0);
+  const saldo=totalPaid-totalCost;
+
+  el.innerHTML=`
+    <div class="card">
+      <div class="ch"><h3>Abrechnung ${yr} – ${t.name}</h3><button class="btn bg_ bsm" onclick="printBill()">🖨 Drucken</button></div>
+      <div class="cb" id="bill-print">
+        <div style="margin-bottom:18px">
+          <p style="font-size:13px;color:var(--tx2)"><strong>${D.settings.buildingName}</strong>${D.settings.address?' · '+D.settings.address:''}</p>
+          <p style="font-size:13px;color:var(--tx3)">Mieter: ${t.name} · ${t.unit} · Zähler: ${t.meter}</p>
+        </div>
+        <div class="table-wrap"><table><tr><th>Monat</th><th>Zählerstand</th><th>Verbrauch</th><th>Kosten</th></tr>${rows}
+        <tr style="font-weight:700;background:var(--s2)"><td>Gesamt</td><td></td><td class="mn">${fn(totalKwh,1)} kWh</td><td class="mn">${fn(totalCost,2)} €</td></tr></table></div>
+        <div class="bill-summary" style="margin-top:18px">
+          <div class="bill-row"><span class="bill-label">Gesamtverbrauch</span><span class="bill-val">${fn(totalKwh,1)} kWh</span></div>
+          <div class="bill-row"><span class="bill-label">Verbrauchskosten (${fn(D.settings.price,3)} €/kWh)</span><span class="bill-val">${fn(totalKwh*(D.settings.price||.35),2)} €</span></div>
+          <div class="bill-row"><span class="bill-label">Grundgebühr (${fn(D.settings.baseFee,2)} €/Monat × 12)</span><span class="bill-val">${fn((D.settings.baseFee||0)*12,2)} €</span></div>
+          <div class="bill-row total"><span class="bill-label">Gesamtkosten</span><span class="bill-val">${fn(totalCost,2)} €</span></div>
+          <div class="bill-row"><span class="bill-label">Gezahlte Abschläge</span><span class="bill-val">${fn(totalPaid,2)} €</span></div>
+          <div class="bill-row total ${saldo>=0?'positive':'negative'}"><span class="bill-label">${saldo>=0?'Guthaben':'Nachzahlung'}</span><span class="bill-val">${saldo>=0?'+':''}${fn(saldo,2)} €</span></div>
+        </div>
+      </div>
+    </div>`;
+}
+
+function printBill(){const w=window.open('','_blank');w.document.write('<html><head><title>Abrechnung</title><style>body{font-family:sans-serif;padding:20px}table{width:100%;border-collapse:collapse}th,td{padding:8px 12px;text-align:left;border-bottom:1px solid #ddd}th{background:#f5f5f5;font-size:11px;text-transform:uppercase}</style></head><body>'+document.getElementById('bill-print').innerHTML+'</body></html>');w.document.close();w.print();}
+
+// ===== PAYMENTS =====
+function rPayments(){
+  const s=document.getElementById('pay-tenant');
+  s.innerHTML=D.tenants.map(t=>`<option value="${t.id}">${t.name}</option>`).join('');
+  document.getElementById('pay-month').value=cm();
+
+  const pays=[...D.payments].sort((a,b)=>(b.month||'').localeCompare(a.month||''));
+  const tPaid=pays.reduce((s,p)=>s+(p.amount||0),0);
+  const yr=cy().toString();
+  const yPaid=pays.filter(p=>p.month&&p.month.startsWith(yr)).reduce((s,p)=>s+(p.amount||0),0);
+
+  document.getElementById('pay-kpi').innerHTML=`
+    <div class="ki"><span class="kl">Zahlungen</span><span class="kv">${pays.length}</span></div>
+    <div class="ki"><span class="kl">Gesamt</span><span class="kv">${fn(tPaid,2)} €</span></div>
+    <div class="ki"><span class="kl">In ${yr}</span><span class="kv">${fn(yPaid,2)} €</span></div>`;
+
+  const el=document.getElementById('pay-tbl');
+  if(!pays.length){el.innerHTML='<div style="text-align:center;color:var(--tx3);padding:30px">Keine Zahlungen</div>';return;}
+  el.innerHTML=`<table><tr><th>Mieter</th><th>Monat</th><th>Betrag</th><th>Notiz</th><th></th></tr>${pays.map(p=>`<tr><td><span class="tb"><span class="td" style="background:${tc(p.tenantId)}"></span>${tn(p.tenantId)}</span></td><td>${fm(p.month)}</td><td class="mn">${fn(p.amount,2)} €</td><td style="color:var(--tx3)">${p.note||'-'}</td><td><button class="btn br bsm" onclick="delPay('${p.id}')">✕</button></td></tr>`).join('')}</table>`;
+}
+
+function addPayment(){
+  const tid=document.getElementById('pay-tenant').value,month=document.getElementById('pay-month').value,amt=parseFloat(document.getElementById('pay-amount').value),note=document.getElementById('pay-note').value.trim();
+  if(!tid)return alert('Mieter wählen!');if(!month)return alert('Monat wählen!');if(isNaN(amt)||amt<=0)return alert('Betrag eingeben!');
+  D.payments.push({id:id(),tenantId:tid,month,amount:amt,note,createdAt:Date.now()});
+  sv();document.getElementById('pay-amount').value='';document.getElementById('pay-note').value='';rPayments();
+}
+
+function autoBookAdvances(){
+  const month=document.getElementById('pay-month').value;
+  if(!month)return alert('Monat wählen!');
+  let booked=0;
+  D.tenants.forEach(t=>{
+    if(!t.monthlyAdvance||t.status!=='active')return;
+    const ex=D.payments.find(p=>p.tenantId===t.id&&p.month===month);
+    if(ex)return;
+    D.payments.push({id:id(),tenantId:t.id,month,amount:t.monthlyAdvance,note:'Auto-Abschlag',createdAt:Date.now()});
+    booked++;
+  });
+  if(!booked)return alert('Keine offenen Abschläge für diesen Monat.');
+  sv();alert(booked+' Abschläge gebucht!');rPayments();
+}
+
+function delPay(pid){if(confirm('Zahlung löschen?')){D.payments=D.payments.filter(p=>p.id!==pid);sv();rPayments();}}
+
+// ===== HISTORY =====
+function rHistory(){
+  const tS=document.getElementById('h-t'),yS=document.getElementById('h-y');
+  const pt=tS.value,py=yS.value;
+  tS.innerHTML='<option value="">Alle</option>'+D.tenants.map(t=>`<option value="${t.id}">${t.name}</option>`).join('');
+  yS.innerHTML='<option value="">Alle</option>'+aY().reverse().map(y=>`<option>${y}</option>`).join('');
+  tS.value=pt;yS.value=py;
+
+  let rs=[...D.readings];
+  if(tS.value)rs=rs.filter(r=>r.tenantId===tS.value);
+  if(yS.value)rs=rs.filter(r=>r.month.startsWith(yS.value));
+  rs.sort((a,b)=>b.month.localeCompare(a.month));
+
+  let tK=0;rs.forEach(r=>{const c=getConsumption(r.tenantId,r.month);if(c)tK+=c;});
+  document.getElementById('h-kpi').innerHTML=`
+    <div class="ki"><span class="kl">Ablesungen</span><span class="kv">${rs.length}</span></div>
+    <div class="ki"><span class="kl">Σ Verbrauch</span><span class="kv">${fn(tK,0)} kWh</span></div>
+    <div class="ki"><span class="kl">Σ Kosten</span><span class="kv">${fn(tK*(D.settings.price||.35),2)} €</span></div>`;
+
+  const el=document.getElementById('h-tbl');
+  if(!rs.length){el.innerHTML='<div style="text-align:center;color:var(--tx3);padding:30px">Keine Ablesungen</div>';return;}
+  el.innerHTML=`<table><tr><th>Mieter</th><th>Monat</th><th>Zählerstand</th><th>Verbrauch</th><th>Kosten</th><th></th></tr>${rs.map(r=>{
+    const c=getConsumption(r.tenantId,r.month);
+    const cost=c?calcCost(c):0;
+    return`<tr><td><span class="tb"><span class="td" style="background:${tc(r.tenantId)}"></span>${tn(r.tenantId)}</span></td><td>${fm(r.month)}</td><td class="mn">${fn(r.reading,1)}</td><td class="mn">${c!==null?fn(c,1)+' kWh':'-'}</td><td class="mn">${cost?fn(cost,2)+' €':'-'}</td><td><button class="btn br bsm" onclick="delReading('${r.id}')">✕</button></td></tr>`;
+  }).join('')}</table>`;
+}
+
+function delReading(rid){if(confirm('Ablesung löschen?')){D.readings=D.readings.filter(r=>r.id!==rid);sv();rHistory();}}
+
+function exportCSV(){
+  let rs=[...D.readings].sort((a,b)=>a.month.localeCompare(b.month));
+  const tf=document.getElementById('h-t').value,yf=document.getElementById('h-y').value;
+  if(tf)rs=rs.filter(r=>r.tenantId===tf);if(yf)rs=rs.filter(r=>r.month.startsWith(yf));
+  let csv='Mieter;Büro;Zähler;Monat;Zählerstand;Verbrauch kWh;Kosten €\n';
+  rs.forEach(r=>{const t=D.tenants.find(t=>t.id===r.tenantId);const c=getConsumption(r.tenantId,r.month);csv+=`${t?t.name:'?'};${t?t.unit:'-'};${t?t.meter:'-'};${r.month};${r.reading};${c||0};${c?calcCost(c).toFixed(2):0}\n`;});
+  dl(csv,'zaehlerstaende.csv','text/csv');
+}
+
+// ===== SETTINGS =====
+function rSettings(){
+  document.getElementById('sg-name').value=D.settings.buildingName||'';
+  document.getElementById('sg-addr').value=D.settings.address||'';
+  document.getElementById('sg-main').value=D.settings.mainMeter||'';
+  document.getElementById('sg-price').value=D.settings.price||'';
+  document.getElementById('sg-base').value=D.settings.baseFee||'';
+  document.getElementById('sg-dist').value=D.settings.distKey||'area';
+}
+function sSet(k,v){D.settings[k]=v;sv();updBadges();}
+
+function exportJSON(){dl(JSON.stringify(D,null,2),'stromtracker_backup.json','application/json');}
+function importJSON(ev){const f=ev.target.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{try{const d=JSON.parse(e.target.result);if(d.tenants){if(confirm('Daten importieren? ('+d.tenants.length+' Mieter)')){D={...dd(),...d};sv();location.reload();}}else alert('Ungültiges Format.');}catch{alert('Fehler.');}};r.readAsText(f);ev.target.value='';}
+function clearAll(){if(confirm('ALLE Daten löschen?')&&confirm('Sicher?')){D=dd();sv();location.reload();}}
+function dl(c,n,t){const b=new Blob([c],{type:t}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=n;a.click();}
+
+// ===== DEMO =====
+function loadDemo(){
+  if(D.tenants.length&&!confirm('Bestehende Daten werden ersetzt!'))return;
+  const ts=[
+    {id:'d1',name:'Müller GmbH',contact:'Hans Müller',email:'h.mueller@mueller.de',phone:'+49 211 12345',unit:'EG links',area:95,meter:'Z-1001',moveIn:'2022-01-15',monthlyAdvance:130,initReading:10000,notes:'',status:'active'},
+    {id:'d2',name:'Schmidt & Partner',contact:'Lisa Schmidt',email:'l.schmidt@sp.de',phone:'+49 211 23456',unit:'1.OG rechts',area:120,meter:'Z-1002',moveIn:'2021-06-01',monthlyAdvance:180,initReading:20000,notes:'Anwaltskanzlei',status:'active'},
+    {id:'d3',name:'TechStart AG',contact:'Tim Weber',email:'tw@techstart.io',phone:'+49 211 34567',unit:'2.OG komplett',area:180,meter:'Z-1003',moveIn:'2023-03-01',monthlyAdvance:220,initReading:5000,notes:'IT-Startup, Server im Büro',status:'active'},
+    {id:'d4',name:'Weber Consulting',contact:'Anna Weber',email:'aw@weber-c.de',phone:'+49 211 45678',unit:'3.OG links',area:75,meter:'Z-1004',moveIn:'2022-09-01',monthlyAdvance:100,initReading:15000,notes:'',status:'active'},
+    {id:'d5',name:'Klein Design',contact:'Max Klein',email:'mk@kleindesign.de',phone:'+49 211 56789',unit:'3.OG rechts',area:60,meter:'Z-1005',moveIn:'2024-01-01',monthlyAdvance:85,initReading:8000,notes:'Grafikdesign-Agentur',status:'active'}
+  ];
+
+  const readings=[],payments=[],mainReadings=[];
+  const baseKwh=[320,450,520,280,210];
+  const y1=cy()-1,y2=cy();
+
+  [y1,y2].forEach(yr=>{
+    const mx=yr===cy()?new Date().getMonth()+1:12;
+    for(let m=1;m<=mx;m++){
+      let mainTotal=0;
+      ts.forEach((t,i)=>{
+        const seasonal=1+.15*Math.sin((m-6)*Math.PI/6);
+        const kwh=Math.round(baseKwh[i]*seasonal*(.85+Math.random()*.3));
+        // Calculate cumulative reading
+        const prevReadings=readings.filter(r=>r.tenantId===t.id).sort((a,b)=>a.month.localeCompare(b.month));
+        const lastReading=prevReadings.length?prevReadings[prevReadings.length-1].reading:t.initReading;
+        const newReading=lastReading+kwh;
+        readings.push({id:id(),tenantId:t.id,month:yr+'-'+String(m).padStart(2,'0'),reading:newReading,createdAt:Date.now()});
+        mainTotal+=kwh;
+        // Add payment
+        payments.push({id:id(),tenantId:t.id,month:yr+'-'+String(m).padStart(2,'0'),amount:t.monthlyAdvance,note:'Abschlag',createdAt:Date.now()});
+      });
+      // Main meter
+      const prevMain=mainReadings.length?mainReadings[mainReadings.length-1].reading:50000;
+      mainReadings.push({id:id(),month:yr+'-'+String(m).padStart(2,'0'),reading:prevMain+mainTotal+Math.round(Math.random()*50+20),createdAt:Date.now()});
+    }
+  });
+
+  D.tenants=ts;D.readings=readings;D.payments=payments;D.mainReadings=mainReadings;
+  D.settings={...D.settings,buildingName:'Gewerbepark Mitte',address:'Industriestr. 42, 40213 Düsseldorf',mainMeter:'HZ-5000',setupDone:true,price:.35,baseFee:10,distKey:'area'};
+  sv();location.reload();
+}
+
+// ===== INIT =====
+updBadges();
+if(!D.settings.setupDone&&!D.tenants.length) startWizard();
+else rDash();
+</script>
+</body>
+</html>
